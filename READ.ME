@@ -4,6 +4,27 @@ pip install -r requirements.txt
 ollama pull nomic-embed-text
 ollama pull llama3.2
 
+pip install numpy==1.26.4
+
 python ingest.py
 
-uvicorn app.main:app --reload
+uvicorn main:app --reload
+
+
+postman request POST 'http://localhost:8000/search' \
+  --header 'Content-Type: application/json' \
+  --body '{
+    "query": "nomic-embed-text",
+    "top_k": 2
+}'
+
+
+
+postman request POST 'http://localhost:8000/ask' \
+  --header 'Content-Type: application/json' \
+  --body '{
+    "question": "What is Semantic search?",
+    "top_k": 3
+}'
+
+
