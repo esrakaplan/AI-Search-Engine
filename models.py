@@ -4,15 +4,15 @@ from pydantic import BaseModel, Field
 # ── REQUEST ────────────────────────────────────────────────────────────── #
 
 class IngestRequest(BaseModel):
-    texts: list[str] = Field(..., min_length=1, description="Eklenecek metinler")
-    metadatas: list[dict] | None = Field(None, description="Her metin için metadata")
+    texts: list[str] = Field(..., min_length=1, description="Text to be added")
+    metadatas: list[dict] | None = Field(None, description="Metadata for each text")
 
     model_config = {
         "json_schema_extra": {
             "example": {
                 "texts": [
-                    "FastAPI, Python ile yüksek performanslı API geliştirme framework'üdür.",
-                    "ChromaDB açık kaynaklı bir vektör veritabanıdır.",
+                    "FastAPI is a high-performance API development framework using Python.",
+                    "ChromaDB is an open-source vector database."
                 ],
                 "metadatas": [
                     {"source": "docs", "topic": "backend"},
@@ -24,23 +24,23 @@ class IngestRequest(BaseModel):
 
 
 class SearchRequest(BaseModel):
-    query: str = Field(..., min_length=1, description="Arama sorgusu")
-    top_k: int = Field(5, ge=1, le=20, description="Kaç sonuç dönsün")
+    query: str = Field(..., min_length=1, description="Search query")
+    top_k: int = Field(5, ge=1, le=20, description="How many results should we get?")
 
     model_config = {
         "json_schema_extra": {
-            "example": {"query": "vektör veritabanı nedir", "top_k": 5}
+            "example": {"query": "What is a vector database?", "top_k": 5}
         }
     }
 
 
 class AskRequest(BaseModel):
-    question: str = Field(..., min_length=1, description="LLM'e sorulacak soru")
-    top_k: int = Field(5, ge=1, le=20, description="Kaç kaynak kullanılsın")
+    question: str = Field(..., min_length=1, description="Questions to ask LLM")
+    top_k: int = Field(5, ge=1, le=20, description="How many resources should be used?")
 
     model_config = {
         "json_schema_extra": {
-            "example": {"question": "ChromaDB'nin özellikleri nelerdir?", "top_k": 3}
+            "example": {"question": "What are the features of ChromaDB?", "top_k": 3}
         }
     }
 

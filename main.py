@@ -29,7 +29,6 @@ app.add_middleware(
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health():
-    """Ollama ve ChromaDB durumunu kontrol et."""
     ollama_status = await ollama.health()
     return HealthResponse(
         status="ok" if ollama_status["status"] == "ok" else "degraded",
@@ -42,11 +41,11 @@ async def health():
 
 @app.post("/ingest", response_model=IngestResponse, tags=["Data"])
 async def ingest(body: IngestRequest):
-    """Metinleri embed edip vector DB'ye kaydet."""
+    """Embed the text and save it to a vector DB."""
     if body.metadatas and len(body.metadatas) != len(body.texts):
         raise HTTPException(
             status_code=422,
-            detail="metadatas uzunluğu texts uzunluğuyla eşit olmalı.",
+            detail="The metadata length must be equal to the text length.",
         )
     try:
         result = await search_service.ingest(
@@ -60,20 +59,19 @@ async def ingest(body: IngestRequest):
 
 @app.delete("/ingest", tags=["Data"])
 async def reset_db():
-    """Veritabanını tamamen sıfırla (dikkatli kullan)."""
     vector_store.reset()
-    return {"message": "Veritabanı sıfırlandı.", "documents_in_db": 0}
+    return {"message": "The database has been reset.", "documents_in_db": 0}
 
 
 # ── SEARCH ──────────────────────────────────────────────────────────────── #
 
 @app.post("/search", response_model=SearchResponse, tags=["Search"])
 async def search(body: SearchRequest):
-    """Semantic search — LLM kullanmaz, sadece benzer dökümanları getirir."""
+    """Semantic search —  just retrieves similar documents."""
     if vector_store.count() == 0:
         raise HTTPException(
             status_code=404,
-            detail="Veritabanı boş. Önce /ingest ile veri ekle.",
+            detail="The database is empty. First, add data using /ingest.",
         )
     try:
         result = await search_service.search(
@@ -89,11 +87,11 @@ async def search(body: SearchRequest):
 
 @app.post("/ask", response_model=AskResponse, tags=["Search"])
 async def ask(body: AskRequest):
-    """RAG — semantic search + Ollama LLM ile cevapla."""
+    """RAG — semantic search + answer with Ollama LLM"""
     if vector_store.count() == 0:
         raise HTTPException(
             status_code=404,
-            detail="Veritabanı boş. Önce /ingest ile veri ekle.",
+            detail="The database is empty. First, add data using /ingest.",
         )
     try:
         result = await search_service.ask(

@@ -1,9 +1,8 @@
 import httpx
-from app.config import settings
+from config import settings
 
 
 class OllamaClient:
-    """Ollama API ile konuşan istemci."""
 
     def __init__(self):
         self.base_url = settings.ollama_base_url
@@ -13,7 +12,7 @@ class OllamaClient:
     # EMBEDDING
     # ------------------------------------------------------------------ #
     async def embed(self, text: str) -> list[float]:
-        """Metni vektöre dönüştür."""
+        """Convert text to vector."""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             r = await client.post(
                 f"{self.base_url}/api/embeddings",
@@ -23,7 +22,7 @@ class OllamaClient:
             return r.json()["embedding"]
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """Birden fazla metni vektöre dönüştür."""
+        """Convert multiple text files to vectors."""
         embeddings = []
         for text in texts:
             emb = await self.embed(text)
@@ -34,7 +33,7 @@ class OllamaClient:
     # LLM
     # ------------------------------------------------------------------ #
     async def generate(self, prompt: str, system: str = "") -> str:
-        """LLM'den yanıt al (streaming kapalı)."""
+        """Receive response from LLM (streaming closed)."""
         payload = {
             "model": settings.llm_model,
             "prompt": prompt,
@@ -55,7 +54,7 @@ class OllamaClient:
     # HEALTH
     # ------------------------------------------------------------------ #
     async def health(self) -> dict:
-        """Ollama'nın ayakta olup olmadığını kontrol et."""
+        """check Ollama health"""
         try:
             async with httpx.AsyncClient(timeout=httpx.Timeout(5.0)) as client:
                 r = await client.get(f"{self.base_url}/api/tags")

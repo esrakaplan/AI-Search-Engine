@@ -1,13 +1,12 @@
-from app.ollama_client import ollama
-from app.vector_store import vector_store
-from app.config import settings
+from ollama_client import ollama
+from vector_store import vector_store
+from config import settings
 
 
-SYSTEM_PROMPT = """Sen yardımcı bir arama asistanısın.
-Verilen bağlam bilgilerini kullanarak soruyu yanıtla.
-Eğer bağlamda cevap yoksa dürüstçe "Bu konuda bilgim bulunmuyor." de.
-Asla uydurma. Yanıtını Türkçe ver."""
-
+SYSTEM_PROMPT = """You are a helpful search assistant.
+Answer the question using the given context information.
+If there is no answer in the context, honestly say "I don't have information on this."
+Never make things up."""
 
 class SearchService:
 
@@ -19,7 +18,7 @@ class SearchService:
         texts: list[str],
         metadatas: list[dict] | None = None,
     ) -> dict:
-        """Metinleri embed edip vector DB'ye kaydet."""
+        """Embed the text and save it to a vector DB."""
         if not texts:
             return {"indexed": 0}
 
@@ -36,10 +35,9 @@ class SearchService:
         }
 
     # ------------------------------------------------------------------ #
-    # SEARCH (saf semantic search — LLM yok)
+    # SEARCH (saf semantic search — no LLM)
     # ------------------------------------------------------------------ #
     async def search(self, query: str, top_k: int | None = None) -> dict:
-        """Sorguya en yakın dökümanları getir."""
         k = top_k or settings.top_k
         query_emb = await ollama.embed(query)
         hits = vector_store.search(query_emb, top_k=k)
@@ -53,7 +51,6 @@ class SearchService:
     # ASK (RAG — search + LLM)
     # ------------------------------------------------------------------ #
     async def ask(self, question: str, top_k: int | None = None) -> dict:
-        """Soru sor → ilgili dökümanları bul → LLM ile cevapla."""
         k = top_k or settings.top_k
 
         # 1. Semantic search
@@ -63,25 +60,23 @@ class SearchService:
         if not hits:
             return {
                 "question": question,
-                "answer": "Veritabanında henüz döküman bulunmuyor.",
+                "answer": "There are no documents in the database yet.",
                 "sources": [],
             }
 
-        # 2. Bağlamı oluştur
         context_parts = []
         for i, hit in enumerate(hits, 1):
             context_parts.append(f"[{i}] {hit['text']}")
         context = "\n\n".join(context_parts)
 
         # 3. Prompt
-        prompt = f"""Bağlam:
+        prompt = f"""Context:
 {context}
 
-Soru: {question}
+question: {question}
 
-Yanıt:"""
+answer:"""
 
-        # 4. LLM çağrısı
         answer = await ollama.generate(prompt=prompt, system=SYSTEM_PROMPT)
 
         return {
@@ -91,5 +86,4 @@ Yanıt:"""
         }
 
 
-# Singleton
 search_service = SearchService()

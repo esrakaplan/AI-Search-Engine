@@ -6,7 +6,6 @@ from config import settings
 
 
 class VectorStore:
-    """ChromaDB ile tüm vektör işlemleri."""
 
     def __init__(self):
         self.client = chromadb.PersistentClient(
@@ -18,9 +17,7 @@ class VectorStore:
             metadata={"hnsw:space": "cosine"},  # cosine similarity
         )
 
-    # ------------------------------------------------------------------ #
-    # EKLEME
-    # ------------------------------------------------------------------ #
+
     def add(
         self,
         texts: list[str],
@@ -28,7 +25,6 @@ class VectorStore:
         metadatas: list[dict] | None = None,
         ids: list[str] | None = None,
     ) -> list[str]:
-        """Dökümanları ve vektörlerini kaydet."""
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         if metadatas is None:
@@ -42,16 +38,14 @@ class VectorStore:
         )
         return ids
 
-    # ------------------------------------------------------------------ #
-    # ARAMA
-    # ------------------------------------------------------------------ #
+
     def search(
         self,
         query_embedding: list[float],
         top_k: int = 5,
         where: dict | None = None,
     ) -> list[dict]:
-        """Verilen vektöre en yakın dökümanları getir."""
+
         kwargs = {
             "query_embeddings": [query_embedding],
             "n_results": min(top_k, self.collection.count() or 1),
@@ -74,9 +68,7 @@ class VectorStore:
             )
         return hits
 
-    # ------------------------------------------------------------------ #
-    # SİLME / BİLGİ
-    # ------------------------------------------------------------------ #
+
     def delete(self, ids: list[str]) -> None:
         self.collection.delete(ids=ids)
 
@@ -84,7 +76,7 @@ class VectorStore:
         return self.collection.count()
 
     def reset(self) -> None:
-        """Koleksiyonu tamamen temizle."""
+
         self.client.delete_collection(settings.collection_name)
         self.collection = self.client.get_or_create_collection(
             name=settings.collection_name,
